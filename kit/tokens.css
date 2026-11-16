@@ -1,0 +1,78 @@
+﻿/* ============================================================================
+   tokens.css —— WorkBuddy 5.9.3 设计变量（最小可抄集）
+   来源：app/resources/app.asar → renderer/assets/tokens-Df-i-zsO.css
+   用法：<link rel="stylesheet" href="tokens.css">（或 @import）
+   ============================================================================ */
+:root {
+  /* 品牌与中性色（palette） */
+  --wb-brand: #00c29a;          /* brand-8，主色 */
+  --wb-brand-strong: #009273;   /* brand-9，hover/按下 */
+  --wb-brand-soft: #dff7f2;     /* brand-1，浅底 */
+  --wb-gray-1: #fafafa;
+  --wb-gray-2: #f7f7f7;
+  --wb-gray-3: #f2f2f2;         /* 页面背景 */
+  --wb-gray-4: #ebebeb;         /* 分隔线 */
+  --wb-gray-5: #e6e6e6;
+
+  /* 语义色 */
+  --wb-text-1: #000;
+  --wb-text-2: rgb(0 0 0 / 0.70);
+  --wb-text-3: rgb(0 0 0 / 0.50);
+  --wb-bg-page: var(--wb-gray-3);
+  --wb-bg-card: #fff;
+  --wb-border: rgb(0 0 0 / 0.15);
+
+  /* 圆角 */
+  --wb-radius-xs: 2px;
+  --wb-radius-sm: 4px;
+  --wb-radius-md: 6px;
+  --wb-radius-lg: 8px;
+  --wb-radius-xl: 12px;
+  --wb-radius-2xl: 16px;
+  --wb-radius-3xl: 20px;
+  --wb-radius-4xl: 24px;
+  --wb-radius-full: 9999px;
+
+  /* 字号 / 行高 */
+  --wb-font-size-3: 12px;
+  --wb-font-size-4: 13px;
+  --wb-font-size-5: 14px;
+  --wb-font-size-6: 16px;
+  --wb-font-size-7: 18px;
+  --wb-font-body: 15px;         /* 聊天正文 */
+  --wb-line-body: 26.25px;      /* = 1.75 */
+
+  /* 阴影（输入框 / 卡片） */
+  --wb-shadow-input: 0 16px 32px -8px rgb(0 0 0 / 0.06), 0 2px 4px -4px rgb(0 0 0 / 0.10);
+  --wb-shadow-input-focus: 0 16px 32px -8px rgb(0 0 0 / 0.10), 0 2px 4px -4px rgb(0 0 0 / 0.12);
+  --wb-shadow-card: 0 1px 2px rgb(0 0 0 / 0.04);
+
+  /* 动效 token（核心） */
+  --wb-dur-instant: 0.1s;
+  --wb-dur-fast: 0.15s;
+  --wb-dur-medium: 0.2s;
+  --wb-dur-gentle: 0.3s;
+  --wb-dur-slow: 0.4s;
+  --wb-ease-decel: cubic-bezier(0, 0, 0.2, 1);
+  --wb-ease-accel: cubic-bezier(0.4, 0, 1, 1);
+  --wb-ease-std: cubic-bezier(0.4, 0, 0.2, 1);
+  --wb-ease-emph: cubic-bezier(0.2, 0, 0, 1);
+  --wb-ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);  /* 弹入 */
+  --wb-ease-expo: cubic-bezier(0.16, 1, 0.3, 1);           /* 现代滑动 */
+}
+
+/* 暗色：来源同文件 [data-theme=dark] 段 */
+[data-theme="dark"] {
+  --wb-brand: #4cf0ce;
+  --wb-brand-soft: #0e2520;
+  --wb-gray-1: #141414;
+  --wb-gray-2: #292929;
+  --wb-gray-3: #1f1f1f;
+  --wb-gray-4: #242424;
+  --wb-gray-5: #3a3a3a;
+  --wb-text-1: #fff;
+  --wb-text-2: rgb(255 255 255 / 0.65);
+  --wb-text-3: rgb(255 255 255 / 0.50);
+  --wb-bg-card: #292929;
+  --wb-border: rgb(255 255 255 / 0.18);
+}

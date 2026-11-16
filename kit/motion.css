@@ -1,0 +1,88 @@
+﻿/* ============================================================================
+   motion.css —— WorkBuddy 5.9.3 动效实现（最小可复用集）
+   每条都对应真实类名与参数，见 analysis/REPORT.md 第 10–12 节
+   依赖：tokens.css
+   用法：class 直接挂在元素上；需要重放时移除再添加 class（或用 animation-name 重置）
+   ============================================================================ */
+
+/* ---------- 状态类：按压 / 图标旋转 / 滚动条 ---------- */
+.wb-press { transition: opacity var(--wb-dur-fast), transform var(--wb-dur-instant); }
+.wb-press:active:not(:disabled) { transform: scale(0.93); }   /* 真机 .cr-send-button:active */
+
+.wb-rotate-icon { transition: transform 0.42s cubic-bezier(0.25, 0.8, 0.3, 1); }
+.wb-rotate-icon[aria-expanded="true"] { transform: rotate(180deg); }
+
+.wb-scroll { scrollbar-width: thin; scrollbar-color: rgb(0 0 0 / 0.2) transparent; }
+.wb-scroll::-webkit-scrollbar { width: 8px; }
+.wb-scroll::-webkit-scrollbar-track { background: transparent; }
+.wb-scroll::-webkit-scrollbar-thumb {
+  background-color: rgb(0 0 0 / 0.2); border-radius: 3px;
+  transition: background-color 0.2s;                 /* 真机 .cr-message-list thumb */
+}
+.wb-scroll.is-idle::-webkit-scrollbar-thumb { background-color: transparent; }
+
+/* ---------- 等待态：扫光文字 / 逐格省略号 / 提示语淡入 ---------- */
+@keyframes wb-shining-sweep { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.wb-shining {
+  background: linear-gradient(110deg,
+    rgb(0 0 0 / 0.26) 0%, rgb(0 0 0 / 0.26) 35%, rgb(0 0 0 / 0.55) 50%,
+    rgb(0 0 0 / 0.26) 65%, rgb(0 0 0 / 0.26) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  width: fit-content;
+  animation: wb-shining-sweep 2.2s linear infinite;
+}
+@keyframes wb-dots { 0%, 20% { content: ""; } 40% { content: "."; } 60% { content: ".."; } 80%, 100% { content: "..."; } }
+.wb-dots::after { content: ""; animation: wb-dots 1s steps(4, end) infinite; }
+@keyframes wb-fade-in { from { opacity: 0; } to { opacity: 1; } }
+.wb-fade-in { animation: wb-fade-in var(--wb-dur-gentle) var(--wb-ease-std) both; }   /* 真机 cb-tip-fade-in .32s */
+
+/* ---------- 入场类 ---------- */
+@keyframes wb-banner-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+.wb-anim-banner { animation: wb-banner-in var(--wb-dur-gentle) ease-out both; }
+
+@keyframes wb-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+.wb-anim-overlay { animation: wb-overlay-in var(--wb-dur-medium) var(--wb-ease-std) both; }
+@keyframes wb-dialog-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+.wb-anim-dialog { animation: wb-dialog-in var(--wb-dur-medium) var(--wb-ease-std) both; }
+
+@keyframes wb-toast-in { from { opacity: 0; transform: translateY(24px) scale(0.98); } to { opacity: 1; transform: none; } }
+.wb-anim-toast { animation: wb-toast-in 0.22s var(--wb-ease-expo) both; }
+
+@keyframes wb-chip-in { from { opacity: 0; transform: translateY(4px) scale(0.95); } to { opacity: 1; transform: none; } }
+.wb-anim-chip { animation: wb-chip-in var(--wb-dur-slow) var(--wb-ease-overshoot) both; }
+
+@keyframes wb-row-in { from { opacity: 0; max-height: 0; transform: translateY(-4px) scaleY(0.92); } to { opacity: 1; max-height: 60px; transform: none; } }
+.wb-anim-row { overflow: hidden; animation: wb-row-in 0.16s var(--wb-ease-expo) both; }
+
+@keyframes wb-slide-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.wb-anim-up { animation: wb-slide-up var(--wb-dur-gentle) var(--wb-ease-decel) both; }
+.wb-anim-up--delay { animation-delay: 0.3s; }        /* 真机场景行 delay .3s */
+
+@keyframes wb-slide-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+.wb-anim-down { animation: wb-slide-down 0.38s var(--wb-ease-expo) both; }
+
+/* ---------- 循环类 ---------- */
+@keyframes wb-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.wb-skeleton { position: relative; overflow: hidden; background: var(--wb-gray-4); border-radius: var(--wb-radius-sm); }
+.wb-skeleton::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.75), transparent);
+  animation: wb-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes wb-spin { to { transform: rotate(360deg); } }
+.wb-spin { animation: wb-spin 0.7s linear infinite; }
+
+/* ---------- 无障碍：尊重减少动效 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .wb-shining, .wb-dots::after, .wb-fade-in, .wb-anim-banner, .wb-anim-overlay,
+  .wb-anim-dialog, .wb-anim-toast, .wb-anim-chip, .wb-anim-row, .wb-anim-up,
+  .wb-anim-down, .wb-skeleton::after, .wb-spin {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .wb-press, .wb-rotate-icon, .wb-scroll::-webkit-scrollbar-thumb { transition: none !important; }
+}

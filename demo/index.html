@@ -1,0 +1,396 @@
+﻿<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>WorkBuddy 聊天动效复刻 Lab</title>
+<style>
+/* ============================================================
+   1) 设计变量：取自 WorkBuddy 5.9.3 tokens-Df-i-zsO.css 与 palette
+   ============================================================ */
+:root{
+  --wb-palette-brand-1:#dff7f2; --wb-palette-brand-8:#00c29a; --wb-palette-brand-9:#009273;
+  --wb-palette-gray-2:#f7f7f7; --wb-palette-gray-3:#f2f2f2; --wb-palette-gray-4:#ebebeb;
+  --wb-color-text-primary:#000; --wb-color-text-secondary:#000000b3; --wb-color-text-tertiary:#00000080;
+  --wb-color-bg-primary-default:#f2f2f2; --wb-color-bg-secondary-default:#fff;
+  --wb-radius-sm:4px; --wb-radius-md:6px; --wb-radius-lg:8px; --wb-radius-xl:12px;
+  --wb-radius-2xl:16px; --wb-radius-3xl:20px; --wb-radius-4xl:24px; --wb-radius-full:9999px;
+  --wb-motion-duration-instant:.1s; --wb-motion-duration-fast:.15s; --wb-motion-duration-medium:.2s;
+  --wb-motion-duration-gentle:.3s; --wb-motion-duration-slow:.4s;
+  --wb-motion-easing-decelerate:cubic-bezier(0,0,.2,1);
+  --wb-motion-easing-accelerate:cubic-bezier(.4,0,1,1);
+  --wb-motion-easing-standard:cubic-bezier(.4,0,.2,1);
+  --wb-motion-easing-emphasized:cubic-bezier(.2,0,0,1);
+  --wb-font-ui:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+
+  /* 动效参数：先用测量到的 motion token 兜底，待运行时采集结果回填 */
+  --anim-bubble-in-duration: var(--wb-motion-duration-gentle);
+  --anim-bubble-in-easing: var(--wb-motion-easing-decelerate);
+  --anim-bubble-in-shift: 8px;
+  --speed:1;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--wb-font-ui);background:var(--wb-color-bg-primary-default);
+     color:var(--wb-color-text-primary);font-size:14px;line-height:1.5;
+     display:flex;height:100vh;overflow:hidden}
+
+/* ============================================================
+   2) 骨架：左侧图标栏 + 主聊天列
+   ============================================================ */
+.rail{width:56px;flex:0 0 56px;border-right:1px solid var(--wb-palette-gray-4);
+      display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 0}
+.rail .dot{width:28px;height:28px;border-radius:var(--wb-radius-md);background:var(--wb-palette-gray-4)}
+.rail .dot.brand{background:var(--wb-palette-brand-8)}
+
+.stage{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:44px;display:flex;align-items:center;gap:10px;padding:0 16px;
+        border-bottom:1px solid var(--wb-palette-gray-4);font-size:13px;color:var(--wb-color-text-secondary)}
+.topbar .name{color:var(--wb-color-text-primary);font-weight:600}
+
+.chat{flex:1;overflow-y:auto;padding:24px 0 8px;scroll-behavior:smooth}
+.thread{max-width:800px;margin:0 auto;padding:0 16px;display:flex;flex-direction:column;gap:18px}
+
+/* 消息通用 */
+.msg{display:flex;gap:10px;align-items:flex-start}
+.msg .avatar{width:26px;height:26px;border-radius:var(--wb-radius-full);flex:0 0 26px;
+             background:var(--wb-palette-brand-1);display:grid;place-items:center;font-size:12px;
+             color:var(--wb-palette-brand-9);font-weight:600}
+.msg.user{flex-direction:row-reverse}
+.msg.user .bubble{background:var(--wb-palette-brand-1);border-radius:var(--wb-radius-3xl) var(--wb-radius-3xl) var(--wb-radius-sm) var(--wb-radius-3xl)}
+.bubble{max-width:min(620px,78%);padding:10px 14px;border-radius:var(--wb-radius-3xl) var(--wb-radius-3xl) var(--wb-radius-3xl) var(--wb-radius-sm);
+        background:var(--wb-color-bg-secondary-default);font-size:15px;line-height:1.75;
+        box-shadow:0 1px 2px rgba(0,0,0,.04);white-space:pre-wrap;word-break:break-word}
+.bubble.plain{background:transparent;box-shadow:none;padding:0}
+
+/* 入场动画（参数由采集结果回填） */
+@keyframes wb-msg-in{
+  from{opacity:0;transform:translateY(var(--anim-bubble-in-shift)) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.msg.enter{animation:wb-msg-in calc(var(--anim-bubble-in-duration)/var(--speed)) var(--anim-bubble-in-easing) both}
+
+/* 思考指示器：三点脉冲 */
+.thinking{display:inline-flex;gap:5px;align-items:center;height:24px}
+.thinking i{width:6px;height:6px;border-radius:50%;background:var(--wb-palette-brand-8);opacity:.35;
+            animation:wb-dot 1.05s var(--wb-motion-easing-standard) infinite}
+.thinking i:nth-child(2){animation-delay:.12s}
+.thinking i:nth-child(3){animation-delay:.24s}
+@keyframes wb-dot{
+  0%,60%,100%{transform:translateY(0);opacity:.35}
+  30%{transform:translateY(-4px);opacity:1}
+}
+
+/* 流式输出光标 */
+.caret{display:inline-block;width:2px;height:1.05em;vertical-align:-2px;margin-left:1px;
+       background:var(--wb-palette-brand-8);animation:wb-caret 1s steps(1) infinite}
+@keyframes wb-caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+.caret.hidden{display:none}
+
+/* hover 悬浮操作 */
+.actions{display:flex;gap:6px;margin-top:6px;opacity:0;transform:translateY(-2px);
+         transition:opacity var(--wb-motion-duration-fast) var(--wb-motion-easing-standard),
+                    transform var(--wb-motion-duration-fast) var(--wb-motion-easing-standard)}
+.msg:hover .actions{opacity:1;transform:translateY(0)}
+.actions button{border:1px solid var(--wb-palette-gray-4);background:#fff;border-radius:var(--wb-radius-md);
+                font-size:12px;color:var(--wb-color-text-secondary);padding:3px 8px;cursor:pointer}
+.actions button:hover{background:var(--wb-palette-gray-2);color:var(--wb-color-text-primary)}
+
+/* ============================================================
+   3) 输入区：数值来自运行时 getComputedStyle 实测
+      width 800 / radius 24 / border .667px rgba(0,0,0,.15)
+      shadow 0 16px 32px -8px rgba(0,0,0,.06), 0 2px 4px -4px rgba(0,0,0,.1)
+      transition box-shadow .15s
+   ============================================================ */
+.composer-wrap{max-width:800px;margin:0 auto;padding:8px 16px 18px;width:100%}
+.composer{display:flex;flex-direction:column;background:#fff;border:.667px solid rgba(0,0,0,.15);
+          border-radius:var(--wb-radius-4xl);padding:12px 0 0;
+          box-shadow:0 16px 32px -8px rgba(0,0,0,.06), 0 2px 4px -4px rgba(0,0,0,.1);
+          transition:box-shadow .15s var(--wb-motion-easing-standard), border-color .15s}
+.composer.focused{box-shadow:0 16px 32px -8px rgba(0,0,0,.10), 0 2px 4px -4px rgba(0,0,0,.12)}
+.composer .editor{width:100%;padding:0 16px;min-height:74px;max-height:252px;overflow-y:auto;
+                  font-size:15px;line-height:1.75;outline:none;white-space:pre-wrap;word-break:break-word}
+.composer .editor[data-empty="true"]::before{content:attr(data-placeholder);color:var(--wb-color-text-tertiary)}
+.composer .toolbar{display:flex;align-items:center;gap:8px;padding:6px 12px 10px}
+.composer .spacer{flex:1}
+.send{width:32px;height:32px;border-radius:var(--wb-radius-full);border:0;display:grid;place-items:center;
+      background:var(--wb-palette-gray-4);color:#00000066;cursor:not-allowed;
+      transition:background .15s var(--wb-motion-easing-standard), color .15s, transform .12s}
+.send.ready{background:var(--wb-palette-brand-8);color:#fff;cursor:pointer}
+.send.ready:active{transform:scale(.93)}   /* 真机 .cr-send-button:active{transform:scale(.93)} */
+.send svg{width:16px;height:16px;fill:currentColor}
+
+/* 思考中：shining text 扫光（WorkBuddy 真实实现 cb-shining-text）
+   keyframes: 0%{background-position:200% 0} -> 100%{-200% 0}，2.2s linear infinite */
+.wb-shining{
+  background:linear-gradient(110deg, rgba(0,0,0,.26) 0%, rgba(0,0,0,.26) 35%, rgba(0,0,0,.55) 50%, rgba(0,0,0,.26) 65%, rgba(0,0,0,.26) 100%);
+  -webkit-text-fill-color:transparent; color:transparent;
+  background-size:200% 100%; -webkit-background-clip:text; background-clip:text;
+  width:fit-content; animation:cb-shining-text-sweep 2.2s linear infinite;
+}
+@keyframes cb-shining-text-sweep{0%{background-position:200% 0}to{background-position:-200% 0}}
+/* 省略号逐格出现：cb-loading-dots，1s steps(4,end) */
+.wb-dots::after{content:""; animation:cb-loading-dots 1s steps(4,end) infinite}
+@keyframes cb-loading-dots{0%,20%{content:""}40%{content:"."}60%{content:".."}80%,to{content:"..."}}
+@keyframes cb-tip-fade-in{0%{opacity:0}to{opacity:1}}
+.wb-tip{animation:cb-tip-fade-in var(--wb-motion-duration-gentle) var(--wb-motion-easing-standard) both}
+/* 消息列表揭示：真机 .cr-message-list__content 的过渡（transform 超调 + opacity 标准） */
+.thread{transition:transform .32s cubic-bezier(.34,1.56,.64,1), opacity .3s cubic-bezier(.4,0,.2,1)}
+.thread.hydrating{opacity:0;visibility:hidden}
+/* 停止按钮：与发送按钮同尺寸圆，仅流式中显示 */
+.stop{display:none;width:32px;height:32px;border-radius:50%;border:1px solid rgba(0,0,0,.15);
+      background:#fff;color:#000;cursor:pointer;align-items:center;justify-content:center;
+      transition:opacity .15s, transform .1s;font-size:10px}
+.stop:active{transform:scale(.92)}
+.composer.running .stop{display:grid}
+.composer.running .send{display:none}
+@media (prefers-reduced-motion: reduce){
+  .thread{transition:none}
+  .msg.enter{animation:none!important}
+  .wb-shining{animation:none!important}
+}
+/* 底部实验控制条 */
+.lab{position:fixed;right:16px;bottom:16px;display:flex;gap:8px;align-items:center;
+     background:#fff;border:1px solid var(--wb-palette-gray-4);border-radius:var(--wb-radius-lg);
+     padding:8px 12px;font-size:12px;box-shadow:0 8px 24px -12px rgba(0,0,0,.25);z-index:20}
+.lab button{border:1px solid var(--wb-palette-gray-4);background:#fff;border-radius:var(--wb-radius-sm);
+            padding:3px 8px;font-size:12px;cursor:pointer}
+.lab button:hover{background:var(--wb-palette-gray-2)}
+.lab select{border:1px solid var(--wb-palette-gray-4);border-radius:var(--wb-radius-sm);padding:2px 4px;font-size:12px}
+/* ===== 暗色主题：取自 tokens-Df-i-zsO.css 的 [data-theme=dark] 段 ===== */
+html[data-theme=dark]{
+  --wb-color-text-primary:#fff; --wb-color-text-secondary:#ffffffa6; --wb-color-text-tertiary:#ffffff80;
+  --wb-color-bg-primary-default:#1f1f1f; --wb-color-bg-secondary-default:#292929;
+  --wb-palette-gray-2:#292929; --wb-palette-gray-4:#242424; --wb-palette-gray-5:#3a3a3a;
+  --wb-palette-brand-1:#0e2520; --wb-palette-brand-8:#4cf0ce; --wb-palette-brand-9:#8ff7e2;
+}
+html[data-theme=dark] body{background:#1f1f1f;color:#fff}
+html[data-theme=dark] .composer{background:#292929;border-color:rgba(255,255,255,.18);
+  box-shadow:0 16px 32px -8px rgba(0,0,0,.5), 0 2px 4px -4px rgba(0,0,0,.4)}
+html[data-theme=dark] .bubble{background:#292929;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+html[data-theme=dark] .msg.user .bubble{background:#0e2520}
+html[data-theme=dark] .rail,html[data-theme=dark] .topbar{border-color:#3a3a3a}
+html[data-theme=dark] .lab,html[data-theme=dark] .actions button{background:#292929;border-color:#3a3a3a;color:#fff}
+
+/* ===== 工具调用卡片：真机 compact 渲染器的 loading / done 两态 ===== */
+.tool-card{margin-top:8px;border:1px solid var(--wb-palette-gray-4);border-radius:var(--wb-radius-xl);
+  background:var(--wb-color-bg-secondary-default);overflow:hidden;font-size:13px}
+.tool-card__head{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;
+  transition:background-color .15s var(--wb-motion-easing-standard)}
+.tool-card__head:hover{background:var(--wb-palette-gray-2)}
+.tool-card__icon{width:16px;height:16px;border-radius:var(--wb-radius-sm);background:var(--wb-palette-brand-8);opacity:.85}
+.tool-card__title{flex:1;color:var(--wb-color-text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tool-card__chev{color:var(--wb-color-text-tertiary);transition:transform .2s var(--wb-motion-easing-standard)}
+.tool-card.open .tool-card__chev{transform:rotate(90deg)}
+.tool-card__body{max-height:0;overflow:hidden;transition:max-height .28s var(--wb-motion-easing-decelerate);
+  border-top:1px solid transparent;padding:0 12px;color:var(--wb-color-text-tertiary);font-family:var(--wb-font-code-family,monospace)}
+.tool-card.open .tool-card__body{max-height:180px;border-top-color:var(--wb-palette-gray-4);padding:8px 12px}
+.tool-card.done .tool-card__icon{background:var(--wb-palette-brand-8);opacity:1}
+
+/* ===== 轮播提示语（真机 LoadingTip：4s 后出现，之后每 10s 换一条，.32s 淡入） ===== */
+.loading-tip{margin-top:6px;font-size:13px;color:var(--wb-color-text-tertiary);opacity:0}
+.loading-tip.show{animation:cb-tip-fade-in .32s ease-out both}/* ===== 官网式大入场（www.workbuddy.cn 的 wb2-hero-rise / shot-in）===== */
+@keyframes wb2-hero-rise{0%{opacity:0;transform:translateY(38px);filter:blur(10px)}100%{opacity:1;transform:none;filter:blur(0)}}
+@keyframes wb2-hero-shot-in{0%{opacity:0;transform:translateY(96px) scale(1.07) rotateX(15deg);filter:blur(14px)}100%{opacity:1;transform:none;filter:blur(0)}}
+.hero-rise{animation:wb2-hero-rise .85s cubic-bezier(.16,1,.3,1) both}
+.hero-shot{animation:wb2-hero-shot-in 1.15s cubic-bezier(.16,1,.3,1) both;transform-origin:50% 0}
+</style>
+</head>
+<body>
+<div class="rail">
+  <div class="dot brand"></div><div class="dot"></div><div class="dot"></div>
+  <div style="flex:1"></div><div class="dot"></div>
+</div>
+
+<div class="stage">
+  <div class="topbar"><span class="name">WorkBuddy</span><span>· 动效复刻 Lab</span></div>
+  <div class="chat" id="chat"><div class="thread" id="thread"></div></div>
+  <div class="composer-wrap">
+    <div class="composer" id="composer">
+      <div class="editor" id="editor" contenteditable="true" data-empty="true"
+           data-placeholder="今天帮你做些什么？@ 添加上下文，/调用技能与指令"></div>
+      <div class="toolbar">
+        <div class="spacer"></div><button class="stop" id="stop" title="停止生成">■</button>
+        <button class="send" id="send" title="发送">
+          <svg viewBox="0 0 24 24"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10.1 15 12 3.4 13.9z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="lab">
+  <span>速度</span>
+  <select id="speed"><option value="0.25">0.25x</option><option value="0.5">0.5x</option>
+    <option value="1" selected>1x</option><option value="2">2x</option></select>
+  <button id="replay">重放一轮</button>
+  <button id="clear">清空</button><button id="theme">暗色</button><button id="hero">官网入场</button>
+</div>
+
+<script>
+/* ============================================================
+   4) 交互模拟：发送 → 思考 → 流式输出
+   ============================================================ */
+const thread = document.getElementById('thread');
+const chat = document.getElementById('chat');
+const editor = document.getElementById('editor');
+const sendBtn = document.getElementById('send');
+let running = false;
+
+const SPEED = () => parseFloat(document.getElementById('speed').value);
+const sleep = (ms) => new Promise(r => setTimeout(r, ms / SPEED()));
+
+editor.addEventListener('input', () => {
+  const text = editor.innerText.trim();
+  editor.dataset.empty = text ? 'false' : 'true';
+  sendBtn.classList.toggle('ready', !!text && !running);
+});
+editor.addEventListener('focus', () => document.getElementById('composer').classList.add('focused'));
+editor.addEventListener('blur', () => document.getElementById('composer').classList.remove('focused'));
+editor.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); startFlow(editor.innerText.trim()); }
+});
+sendBtn.addEventListener('click', () => startFlow(editor.innerText.trim()));
+
+function scrollToBottom(smooth) {
+  chat.scrollTo({ top: chat.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function addUserMessage(text) {
+  const el = document.createElement('div');
+  el.className = 'msg user enter';
+  el.innerHTML = '<div class="avatar">我</div><div class="bubble"></div>';
+  el.querySelector('.bubble').textContent = text;
+  thread.appendChild(el);
+  scrollToBottom(true);
+  return el;
+}
+
+function addAssistantShell() {
+  const el = document.createElement('div');
+  el.className = 'msg assistant enter';
+  el.innerHTML =
+    '<div class="avatar">WB</div>' +
+    '<div>' +
+      '<div class="bubble plain"><span class="wb-shining" style="font-size:15px">正在思考</span><span class="wb-dots"></span></div>' +
+      '<div class="actions"><button>复制</button><button>重新生成</button></div>' +
+    '</div>';
+  thread.appendChild(el);
+  scrollToBottom(true);
+  return el;
+}
+
+async function typeInto(el, text, caret) {
+  const bubble = el.querySelector('.bubble');
+  bubble.textContent = '';
+  const span = document.createElement('span');
+  const cur = document.createElement('span');
+  cur.className = 'caret';
+  bubble.append(span, cur);
+  for (let i = 0; i < text.length; i++) {
+    span.textContent += text[i];
+    scrollToBottom(false);
+    await sleep(text[i] === '\n' ? 45 : 18 + Math.random() * 26);
+  }
+  cur.remove();
+}
+
+async function startFlow(text) {
+  if (running || !text) return;
+  running = true;
+  sendBtn.classList.remove('ready');
+  editor.innerText = '';
+  editor.dataset.empty = 'true';
+
+  thread.style.transform = "translateY(40px)";
+  requestAnimationFrame(() => { thread.style.transform = "translateY(0)"; });
+  addUserMessage(text);
+  document.getElementById("composer").classList.add("running");
+  await sleep(120);
+
+  const shell = addAssistantShell();
+  rotateTips(shell.lastElementChild);
+  await sleep(900);
+  const card = addToolCard(shell.lastElementChild, '已读取工作空间 3 个文件', 'src/app.tsx\nsrc/theme.css\nreadme.md');
+  await sleep(1400);
+  card.finish();
+
+  // 思考结束 → 输出
+  const bubble = shell.querySelector('.bubble');
+  bubble.innerHTML = '';
+  await typeInto(shell, '收到：' + text + '\n\n这是用真实采集的动效参数复刻的流式输出效果，光标跟随最后一字。', true);
+
+  running = false;
+  editor.dispatchEvent(new Event('input'));
+}
+
+document.getElementById('replay').onclick = () => {
+  if (running) return;
+  startFlow('演示一下发送后的动效');
+};
+document.getElementById('clear').onclick = () => { thread.innerHTML = ''; };
+
+/* ===== 工具调用卡片 + 轮播提示语（复刻真机 compact 渲染器与 LoadingTip） ===== */
+function addToolCard(parent, title, bodyText) {
+  const card = document.createElement('div');
+  card.className = 'tool-card';
+  card.innerHTML = '<div class="tool-card__head"><span class="tool-card__icon"></span>' +
+    '<span class="tool-card__title"><span class="wb-shining">正在执行</span><span class="wb-dots"></span></span>' +
+    '<span class="tool-card__chev">›</span></div>' +
+    '<div class="tool-card__body"></div>';
+  card.querySelector('.tool-card__body').textContent = bodyText;
+  card.querySelector('.tool-card__head').addEventListener('click', () => card.classList.toggle('open'));
+  parent.appendChild(card);
+  return {
+    finish() {
+      card.classList.add('done');
+      card.querySelector('.tool-card__title').textContent = title;
+    }
+  };
+}
+
+const TIPS = ['正在理解你的问题…', '正在检索工作空间…', '正在整理要点…', '马上就好…'];
+async function rotateTips(host) {
+  const tip = document.createElement('div');
+  tip.className = 'loading-tip';
+  host.appendChild(tip);
+  await sleep(4000);                       /* 真机 initialDelayMs = 4000 */
+  let i = 0;
+  while (running) {
+    tip.textContent = TIPS[i % TIPS.length];
+    tip.classList.remove('show');
+    void tip.offsetWidth;                  /* 重启动画 */
+    tip.classList.add('show');
+    i++;
+    await sleep(10000);                    /* 真机 rotationIntervalMs = 10000 */
+  }
+  tip.remove();
+}
+
+document.getElementById('theme').onclick = () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme === 'dark';
+  root.dataset.theme = dark ? 'light' : 'dark';
+  document.getElementById('theme').textContent = dark ? '暗色' : '亮色';
+};
+document.getElementById('hero').onclick = () => {
+  const el = document.querySelector('.thread').lastElementChild || document.querySelector('.topbar');
+  if (!el) return;
+  el.classList.remove('hero-rise', 'hero-shot');
+  void el.offsetWidth;
+  el.classList.add(el.classList.contains('msg') ? 'hero-shot' : 'hero-rise');
+};
+/* 首屏示例 */
+window.addEventListener('load', () => {
+  addUserMessage('帮我看看这个界面的动效是怎么做的');
+  const shell = addAssistantShell();
+  setTimeout(() => {
+    const b = shell.querySelector('.bubble');
+    b.innerHTML = '';
+    typeInto(shell, '好，先从设计变量开始：--wb-motion-duration-gentle = .3s，缓动是 cubic-bezier(0, 0, .2, 1)。', false);
+  }, 800);
+});
+</script>
+</body>
+</html>
+
