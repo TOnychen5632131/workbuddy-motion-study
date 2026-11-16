@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WorkBuddy 动效逆向研究</title>
+<style>
+:root{--brand:#00c29a;--brand-soft:#dff7f2;--bg:#f2f2f2;--card:#fff;--text:#000;--text2:rgba(0,0,0,.7);--line:#ebebeb}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.7 "PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+.wrap{max-width:860px;margin:0 auto;padding:56px 24px 80px}
+h1{font-size:30px;margin:0 0 8px;letter-spacing:-.5px}
+.sub{color:var(--text2);margin:0 0 36px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px;text-decoration:none;color:inherit;
+transition:transform .32s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,opacity .2s}
+a.card:hover{transform:translateY(-3px);box-shadow:0 16px 32px -8px rgba(0,0,0,.10)}
+a.card:active{transform:scale(.985)}
+.card h2{font-size:16px;margin:0 0 6px}
+.card p{margin:0;color:var(--text2);font-size:13px}
+.tag{display:inline-block;font-size:11px;color:#009273;background:var(--brand-soft);border-radius:999px;padding:1px 8px;margin-bottom:10px}
+footer{margin-top:48px;color:var(--text2);font-size:12px}
+footer a{color:#009273}
+</style></head><body><div class="wrap">
+<span class="tag">独立研究 · 非官方</span>
+<h1>WorkBuddy 动效逆向研究</h1>
+<p class="sub">把一个 AI 办公桌面应用的聊天界面拆开，量出它的颜色、圆角、时长、缓动曲线，再复刻成可运行的 Demo 和可直接引用的 CSS。</p>
+<div class="grid">
+<a class="card" href="demo/index.html"><h2>聊天界面复刻 Demo →</h2><p>输入框长高、发送按钮、思考扫光、流式输出、列表揭示；支持 0.25x–2x 速度回放与亮暗主题。</p></a>
+<a class="card" href="demo/gallery.html"><h2>组件动效画廊 →</h2><p>13 个可复用动效（横幅/对话框/toast/chip/骨架屏/按压/滚动条…），每条标注真实参数。</p></a>
+<a class="card" href="report/REPORT.md"><h2>逆向报告 →</h2><p>技术栈、设计 token、实测数值、分阶段动效、官网对照、全站过渡统计与存疑清单。</p></a>
+<a class="card" href="kit/README.md"><h2>motion.css 使用说明 →</h2><p>两个 CSS 文件即可获得同一套动效；含工具类与真机来源对照表。</p></a>
+</div>
+<footer>
+<p>仓库：<a href="https://github.com/TOnychen5632131/workbuddy-motion-study">github.com/TOnychen5632131/workbuddy-motion-study</a></p>
+<p>本页与 Demo 均为静态页面，不联网、不上传数据。研究内容仅用于学习动效实现，与产品厂商无关联。</p>
+</footer>
+</div></body></html>
